@@ -5,9 +5,11 @@ import pandas as pd
 from tradingFuncs import *
 
 hood = yf.Ticker("aapl")
-historical = hood.history(start="2023-02-01", end="2023-07-18", interval="1h")
+historical = hood.history(start="2023-02-01", interval="1d")
 historical['5SMA'] = sma(5, historical, "Close")
 historical['10SMA'] = sma(10, historical, "Close")
+historical['20SMA'] = sma(20, historical, "Close")
+
 
 stopLossList = []
 
@@ -26,18 +28,19 @@ while x < (len(historical)-1):
             print("Stoploss requirement met. Sold at " + str(price[x+1]) + ". Profit: " + str(price[x+1] - stock.averagePrice))
             stopLossList.remove(stop)
     
-    if(historical['5SMA'][x] > historical['10SMA'][x]):
+    if(historical['5SMA'][x] > historical['10SMA'][x] and historical["5SMA"][x] > historical["20SMA"][x]):
         if(flag == 0):
-            if(buy(stock, 2 * amount, price[x+1], mybank)):
+            if(buy(stock, amount, price[x+1], mybank)):
                 print(historical.index[x+1])
-                print("Buy:     " + str(2 * amount) + " shares " + str(price[x+1]))
-                stop = stopLoss(0.90 * price[x+1], 2 * amount)
-                print("Stoploss set at:  " + str(0.95 * price[x+1]))
+                print("Buy:     " + str(amount) + " shares " + str(price[x+1]))
+                stop = stopLoss(0.90 * price[x+1], amount)
+                print("Stoploss set at:  " + str(0.97 * price[x+1]))
                 stopLossList.append(stop)
                 flag = 1
 
-        elif(historical['5SMA'][x] < historical['10SMA'][x]):
-            if(flag == 1):
+    elif(historical['5SMA'][x] < historical['10SMA'][x] or historical["5SMA"][x] < historical["20SMA"][x]):
+        if(flag == 1):
+            if sell(stock, amount, price[x+1], mybank):
                 print(historical.index[x+1])
                 print("Sell:    " + str(amount) + " shares " + str(price[x+1]) + ". Profit: " + str(price[x+1] - stock.averagePrice))
                 stopLossList[0].amnt -= 1

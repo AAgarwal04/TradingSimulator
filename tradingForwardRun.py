@@ -16,9 +16,12 @@ twilioNumber = ['TwilioPhoneNumber']
 myNumber = ['YourPhoneNumber']
 client = Client(account_sid, auth_token)
 
-def tradeStrat(historical, SMA10, SMA5, flag):
+def tradeStrat(stock, startDate, flag):
+    historical = stock.history(start=startDate, interval="1h")
+    historical['SMA10'] = sma(10, historical, "Close")
+    historical['SMA5'] = sma(5, historical, "Close")
     print(historical['Close'][len(historical) - 1])
-    if historical[SMA5][len(historical) - 1] > historical[SMA10][len(historical) - 1]:
+    if historical['SMA5'][len(historical) - 1] > historical['SMA10'][len(historical) - 1]:
         if flag == 0:
             message = client.messages.create(
                 from_= twilioNumber,
@@ -26,7 +29,7 @@ def tradeStrat(historical, SMA10, SMA5, flag):
                 to=myNumber
             )
             flag = 1
-    if historical[SMA5][len(historical) - 1] < historical[SMA10][len(historical) - 1]:
+    if historical['SMA5'][len(historical) - 1] < historical['SMA10'][len(historical) - 1]:
         if flag == 1:
             message = client.messages.create(
                 from_= twilioNumber,
@@ -37,11 +40,9 @@ def tradeStrat(historical, SMA10, SMA5, flag):
 
 stock = yf.Ticker("aapl")
 today = date.today()
-startDate = today - timedelta(weeks=10)
+startDate = today - timedelta(days=2)
 
-historical = stock.history(start=startDate, interval="1h")
-historical['SMA10'] = sma(10, historical, "Close")
-historical['SMA5'] = sma(5, historical, "Close")
+
 
 nyse = mcal.get_calendar('NYSE')
 early = nyse.schedule(start_date=startDate, end_date=today)
@@ -60,7 +61,7 @@ while True:
                     body='Market Open',
                     to=myNumber
                 )
-            tradeStrat(historical, 'SMA10', 'SMA5', flag)
+            tradeStrat(stock, startDate, flag)
             time.sleep(3600)
         else:
             if closedFlag == 0:
